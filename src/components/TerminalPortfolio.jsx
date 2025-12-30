@@ -179,7 +179,7 @@ Ctrl + l => clear the terminal`,
 
     about: () => `Hi, I’m Antik Mondal.
 
-I’m an engineer and a problem solver.
+I’m an CS engineer and a problem solver.
 I like building systems and working close to the core.
 
 I’m building my own startups, mainly focused on healthcare,
