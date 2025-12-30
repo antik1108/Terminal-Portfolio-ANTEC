@@ -163,6 +163,7 @@ clear        - clear the terminal
 echo         - print out anything
 education    - my education background
 email        - send an email to me
+github       - view my GitHub profile
 gui          - go to my portfolio in GUI
 help         - check available commands
 history      - view command history
@@ -176,11 +177,17 @@ Tab or Ctrl + i => autocompletes the command
 Up Arrow => go back to previous command
 Ctrl + l => clear the terminal`,
 
-    about: () => `Hi, my name is Antik Mondal!
+    about: () => `Hi, I’m Antik Mondal.
 
-I'm a full-stack developer based in India.
-I am passionate about writing codes and
-developing web applications to solve real-life challenges.`,
+I’m an engineer and a problem solver.
+I like building systems and working close to the core.
+
+I’m building my own startups, mainly focused on healthcare,
+where I try to solve real problems using technology.
+
+I enjoy writing code, designing systems,
+and turning ideas into working products.
+`,
 
     clear: () => 'CLEAR',
 
@@ -226,9 +233,12 @@ Here are some of my projects you shouldn't miss
    A smart, paperless parcel management system for universities 
    and workplaces with secure logging, notifications, and pickup tracking.
 
-
 Usage: projects go <project-no>
-eg: projects go 1`,
+eg: projects go 1
+
+These are selected projects.
+More work and experiments live on GitHub.
+Type: github`,
 
     pwd: () => `/home/antik`,
 
@@ -248,6 +258,8 @@ Usage: themes set <theme-name>
 eg: themes set ubuntu`,
 
     whoami: () => `guest`,
+
+    github: () => `GitHub: https://github.com/antik1108`,
 
     // Handle compound commands
     'projects go': (args) => {

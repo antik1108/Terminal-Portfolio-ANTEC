@@ -38,7 +38,6 @@ This portfolio communicates:
 - `contact` - How to reach me
 - `resume` - View/download resume
 - `clear` - Clear terminal
-- `ls` - List directory contents
 
 ## 🛠️ Tech Stack
 
