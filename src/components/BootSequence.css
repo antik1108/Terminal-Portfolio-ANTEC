@@ -1,0 +1,141 @@
+/* Boot Sequence Styles */
+.boot-sequence {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #050508;
+  color: #22c55e;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* ASCII Logo Styles */
+.ascii-logo {
+  text-align: center;
+  animation: fadeIn 0.8s ease-in;
+}
+
+.logo-text {
+  color: #9B7CFF;
+  font-size: clamp(0.5rem, 2vw, 1rem);
+  line-height: 1.2;
+  margin: 0;
+  white-space: pre;
+}
+
+.logo-subtitle {
+  color: #e4e4e7;
+  font-size: clamp(0.8rem, 2.5vw, 1.2rem);
+  margin-top: 1rem;
+  font-weight: 300;
+}
+
+/* Boot Messages Styles */
+.boot-messages {
+  text-align: left;
+  max-width: 600px;
+  width: 90%;
+}
+
+.boot-message {
+  color: #22c55e;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  margin: 0.5rem 0;
+  animation: typeIn 0.3s ease-out;
+}
+
+/* Loading Cursor */
+.loading-cursor {
+  color: #22c55e;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  margin-left: 0.2rem;
+}
+
+/* Skip Hint */
+.skip-hint {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  color: #71717a;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  animation: fadeIn 3s ease-in;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes typeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .boot-sequence {
+    padding: 1rem;
+  }
+  
+  .logo-text {
+    font-size: 0.6rem;
+  }
+  
+  .logo-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .boot-message {
+    font-size: 0.8rem;
+  }
+  
+  .skip-hint {
+    bottom: 1rem;
+    right: 1rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 0.4rem;
+  }
+  
+  .logo-subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .boot-message {
+    font-size: 0.7rem;
+  }
+}
