@@ -164,7 +164,6 @@ echo         - print out anything
 education    - my education background
 email        - send an email to me
 github       - view my GitHub profile
-gui          - go to my portfolio in GUI
 help         - check available commands
 history      - view command history
 projects     - view projects that I've coded
@@ -176,7 +175,7 @@ whoami       - about current user
 Tab or Ctrl + i => autocompletes the command
 Up Arrow => go back to previous command
 Ctrl + l => clear the terminal`,
-
+//gui          - go to my portfolio in GUI (add this latter)
     about: () => `Hi, I’m Antik Mondal.
 
 I’m an CS engineer and a problem solver.
