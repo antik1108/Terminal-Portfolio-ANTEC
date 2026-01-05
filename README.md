@@ -1,66 +1,127 @@
-# ANTEC - Terminal Portfolio
+# ANTEC Terminal Portfolio - Monorepo
 
-A web-based interactive terminal portfolio that showcases skills and experience in a unique, developer-focused way.
+A professional monorepo structure for the ANTEC Terminal Portfolio, built with industry-standard practices and ready for scaling.
 
-## 🎯 Features
+## 🏗️ **Architecture**
 
-- **Real Terminal Experience**: Built with xterm.js for authentic terminal behavior
-- **Keyboard-First**: Navigate entirely with keyboard commands
-- **Dark Theme**: Professional dark terminal aesthetic with violet accents
-- **Interactive Commands**: Type `help` to see available commands
-- **Mobile Responsive**: Works on desktop and mobile devices
-- **Fast Loading**: Instant access via URL, no installation required
+```
+antec-terminal-portfolio-monorepo/
+├── apps/                         ✅ All runnable applications
+│   └── web/                      ✅ React + Vite Web App
+│       ├── src/                  ✅ Terminal portfolio components
+│       ├── public/               ✅ Static assets
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── vite.config.js
+│
+├── packages/                     ✅ Shared code across apps
+│   ├── shared/                   ✅ Types, schemas, constants
+│   ├── ui/                       ✅ Shared React components
+│   └── api-client/               ✅ Typed API client
+│
+├── turbo.json                    ✅ Monorepo task runner
+├── tsconfig.base.json            ✅ Shared TypeScript config
+└── package.json                  ✅ Workspace root
+```
 
-## 🚀 Quick Start
+## 🚀 **Quick Start**
 
 ```bash
+# Install all dependencies
 npm install
+
+# Start development server
 npm run dev
+
+# Build all packages
+npm run build
+
+# Run linting
+npm run lint
+
+# Type checking
+npm run type-check
 ```
 
-Visit `http://localhost:5173` to see the terminal portfolio in action.
+## 📦 **Packages**
 
-## 🎨 Design Philosophy
+### `@antec/web`
+The main React application featuring:
+- Interactive terminal interface
+- Boot sequence animation
+- Command system with projects, socials, themes
+- Responsive design for all devices
+- xterm.js integration
 
-This portfolio communicates:
-- Terminal-first mindset
-- DevOps/systems thinking
-- Clarity over flash
-- Confidence without noise
+### `@antec/shared`
+Shared types, schemas, and constants:
+- TypeScript interfaces
+- Zod validation schemas
+- Brand colors and configuration
+- Terminal themes and settings
 
-## 📱 Commands
+### `@antec/ui`
+Reusable React components:
+- Loading spinners
+- Buttons and inputs
+- Future shared UI elements
 
-- `help` - Show available commands
-- `about` - Learn about me
-- `skills` - Technical skills
-- `projects` - Things I've built
-- `education` - Academic background
-- `contact` - How to reach me
-- `resume` - View/download resume
-- `clear` - Clear terminal
+### `@antec/api-client`
+Typed API client for external services:
+- GitHub API integration
+- Future backend API methods
+- Type-safe HTTP requests
 
-## 🛠️ Tech Stack
+## 🛠️ **Technology Stack**
 
-- React + Vite
-- xterm.js (terminal rendering)
-- CSS (custom styling)
-- JetBrains Mono font
+- **Frontend**: React 19.2.0 + Vite 7.2.4
+- **Terminal**: xterm.js 6.0.0
+- **Monorepo**: Turbo + npm workspaces
+- **TypeScript**: 5.7.2 with strict mode
+- **Validation**: Zod schemas
+- **Styling**: Pure CSS with responsive design
 
-## 🌐 Deployment
+## 🎯 **Features**
 
-Ready for deployment on Vercel, Netlify, or GitHub Pages.
+- ✅ **Industry-standard monorepo structure**
+- ✅ **Type-safe across all packages**
+- ✅ **Shared code reusability**
+- ✅ **Fast builds with Turbo**
+- ✅ **Ready for backend integration**
+- ✅ **Mobile responsive**
+- ✅ **Professional terminal experience**
+
+## 🔮 **Future Roadmap**
+
+- [ ] Add `apps/backend/` with Express + Socket.IO
+- [ ] Add `apps/mobile/` with React Native
+- [ ] Real-time features and user authentication
+- [ ] Database integration
+- [ ] CI/CD pipeline with GitHub Actions
+
+## 🌐 **Deployment**
+
+The web app is ready for deployment on:
+- **Vercel** (recommended)
+- **Netlify**
+- **GitHub Pages**
 
 ```bash
+# Build for production
 npm run build
+
+# Preview production build
+cd apps/web && npm run preview
 ```
 
-## 🎨 Color Scheme
+## 🤝 **Contributing**
 
-- Background: `#050508` → `#0A0A12` gradient
-- Primary Accent: `#9B7CFF` (violet)
-- Text: `#C9D1D9`
-- Muted: `#8B949E`
+This monorepo follows industry best practices:
+- Conventional commits
+- TypeScript strict mode
+- ESLint configuration
+- Shared tooling configuration
 
 ---
 
-Built with ❤️ by Antik
+Built with ❤️ by Antik Mondal | [GitHub](https://github.com/antik1108) | [Portfolio](https://terminal-antec.tech)
