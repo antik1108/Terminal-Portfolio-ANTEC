@@ -237,8 +237,22 @@ export const TERMINAL_CONSTANTS = {
 }
 
 // API endpoints configuration
+// Use VITE_API_URL env var in production builds, fallback to localhost for development
+const getBaseUrl = () => {
+  // Browser (Vite build)
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  // Node.js / SSR
+  if (typeof process !== 'undefined' && process.env && process.env.VITE_API_URL) {
+    return process.env.VITE_API_URL
+  }
+  // Fallback for local development
+  return 'http://localhost:3001/api'
+}
+
 export const API_ENDPOINTS = {
-  BASE_URL: 'http://localhost:3001/api',
+  BASE_URL: getBaseUrl(),
   AUTH: {
     SIGNUP: '/auth/signup',
     LOGIN: '/auth/login',
