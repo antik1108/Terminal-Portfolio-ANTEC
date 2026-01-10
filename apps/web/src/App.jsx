@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BootSequence from './components/BootSequence'
 import TerminalPortfolio from './components/TerminalPortfolio'
+import { AuthProvider } from './contexts/AuthContext'
 import './App.css'
 
 // Boot state constants
@@ -22,14 +23,16 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {bootState === BootState.BOOTING && (
-        <BootSequence onComplete={handleBootComplete} />
-      )}
-      {bootState === BootState.PORTFOLIO && (
-        <TerminalPortfolio />
-      )}
-    </div>
+    <AuthProvider>
+      <div className="app">
+        {bootState === BootState.BOOTING && (
+          <BootSequence onComplete={handleBootComplete} />
+        )}
+        {bootState === BootState.PORTFOLIO && (
+          <TerminalPortfolio />
+        )}
+      </div>
+    </AuthProvider>
   )
 }
 

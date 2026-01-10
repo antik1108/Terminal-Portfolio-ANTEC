@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
+import { useAuth } from '../contexts/AuthContext'
+import { createAuthCommandHandler, getAuthCommandsHelp } from '../utils/authCommands'
+import { createPromptManager } from '../utils/promptManager'
+import { TERMINAL_CONSTANTS } from '@antec/shared'
 
 function TerminalPortfolio() {
   const terminalRef = useRef(null)
@@ -13,6 +17,13 @@ function TerminalPortfolio() {
   const commandHistory = useRef([])
   const historyIndex = useRef(-1)
   const [currentTheme, setCurrentTheme] = useState('dark')
+  const [terminalState, setTerminalState] = useState('idle') // 'idle', 'authenticating', 'processing'
+  
+  // Authentication integration
+  const authContext = useAuth()
+  const authRef = useRef(authContext)
+  const authHandler = useRef(null)
+  const promptManager = useRef(null)
 
   const themes = {
     dark: {
@@ -155,10 +166,12 @@ function TerminalPortfolio() {
     }
   }
 
-  const commands = {
+  // Create commands object that updates with auth context
+  const commands = useMemo(() => ({
     welcome: () => 'WELCOME',
     
-    help: () => `about        - about Antik Mondal
+    help: () => {
+      let helpText = `about        - about Antik Mondal
 clear        - clear the terminal
 echo         - print out anything
 education    - my education background
@@ -172,9 +185,21 @@ socials      - check out my social accounts
 themes       - check available themes
 whoami       - about current user
 
+Authentication Commands:
+${getAuthCommandsHelp()}
+
 Tab or Ctrl + i => autocompletes the command
 Up Arrow => go back to previous command
-Ctrl + l => clear the terminal`,
+Ctrl + l => clear the terminal`
+
+      // Add authentication status indicator
+      if (authHandler.current && authHandler.current.isAuthProcessing()) {
+        helpText += `\n\n\x1b[33m⚠ Authentication in progress - some commands are disabled\x1b[0m`
+        helpText += `\nCtrl + C => cancel current authentication operation`
+      }
+
+      return helpText
+    },
 //gui          - go to my portfolio in GUI (add this latter)
     about: () => `Hi, I’m Antik Mondal.
 
@@ -256,7 +281,17 @@ eg: socials go 1`,
 Usage: themes set <theme-name>
 eg: themes set ubuntu`,
 
-    whoami: () => `guest`,
+    whoami: () => {
+      // Read freshest auth info from the ref (avoids stale closures / timing races)
+      try {
+        const auth = authRef.current || authContext
+        const user = auth && (auth.getCurrentUser ? auth.getCurrentUser() : auth.user)
+        if (user && user.username) return user.username
+      } catch (e) {
+        // ignore and fallback
+      }
+      return 'guest'
+    },
 
     github: () => `GitHub: https://github.com/antik1108`,
 
@@ -302,8 +337,39 @@ eg: themes set ubuntu`,
         return `Theme set to ${themeName}`
       }
       return `Theme '${themeName}' not found. Use 'themes' to see available themes.`
+    },
+
+    // Authentication commands
+    'antec signup': () => {
+      if (authHandler.current) {
+        authHandler.current.handleSignupCommand()
+        return 'AUTH_COMMAND'
+      }
+      return 'Authentication system not available'
+    },
+
+    'antec login': () => {
+      if (authHandler.current) {
+        authHandler.current.handleLoginCommand()
+        return 'AUTH_COMMAND'
+      }
+      return 'Authentication system not available'
+    },
+
+    'antec logout': () => {
+      // Check current auth state using getter to avoid race conditions
+      const currentUser = authContext.getCurrentUser ? authContext.getCurrentUser() : authContext.user
+      if (!currentUser) {
+        return 'You are not logged in.'
+      }
+
+      if (authHandler.current) {
+        authHandler.current.handleLogoutCommand()
+        return 'AUTH_COMMAND'
+      }
+      return 'Authentication system not available'
     }
-  }
+  }), [authContext.isAuthenticated, authContext.user, authContext.loading]) // Dependencies for useMemo
 
   const writeToTerminal = (text, newLine = true) => {
     if (terminal.current) {
@@ -312,7 +378,16 @@ eg: themes set ubuntu`,
   }
 
   const showPrompt = () => {
-    writeToTerminal('\x1b[38;2;155;124;255mguest@antec\x1b[0m:\x1b[38;2;139;148;158m~\x1b[0m\x1b[38;2;139;148;158m$\x1b[0m ', false)
+    if (promptManager.current) {
+      promptManager.current.showPrompt()
+    } else {
+      // Fallback to original prompt logic if promptManager not available
+      const promptText = authContext.isAuthenticated && authContext.user 
+        ? `\x1b[38;2;155;124;255m${authContext.user.username}@antec\x1b[0m:\x1b[38;2;139;148;158m~\x1b[0m\x1b[38;2;139;148;158m$\x1b[0m `
+        : '\x1b[38;2;155;124;255mguest@antec\x1b[0m:\x1b[38;2;139;148;158m~\x1b[0m\x1b[38;2;139;148;158m$\x1b[0m '
+      
+      writeToTerminal(promptText, false)
+    }
   }
 
   const processCommand = (cmd) => {
@@ -321,6 +396,22 @@ eg: themes set ubuntu`,
     if (trimmedCmd === '') {
       showPrompt()
       return
+    }
+
+    // Check if terminal is in authentication state and block non-auth commands
+    if (authHandler.current && authHandler.current.isAuthProcessing()) {
+      // Only allow certain commands during authentication
+      const allowedDuringAuth = ['help', 'clear']
+      const baseCmd = trimmedCmd.split(' ')[0].toLowerCase()
+      
+      if (!allowedDuringAuth.includes(baseCmd) && !trimmedCmd.startsWith('antec')) {
+        authHandler.current.displayStateMessage(
+          'Authentication in progress. Please complete the current operation or use Ctrl+C to cancel.',
+          'warning'
+        )
+        showPrompt()
+        return
+      }
     }
 
     commandHistory.current.push(cmd)
@@ -339,6 +430,9 @@ eg: themes set ubuntu`,
         if (output === 'CLEAR') {
           terminal.current.clear()
           showPrompt()
+        } else if (output === 'AUTH_COMMAND') {
+          // Auth command is being handled by authHandler, don't show prompt yet
+          return
         } else {
           writeToTerminal(output)
           showPrompt()
@@ -355,6 +449,9 @@ eg: themes set ubuntu`,
         showPrompt()
       } else if (output === 'WELCOME') {
         showWelcome()
+      } else if (output === 'AUTH_COMMAND') {
+        // Auth command is being handled by authHandler, don't show prompt yet
+        return
       } else {
         writeToTerminal(output)
         showPrompt()
@@ -381,11 +478,11 @@ eg: themes set ubuntu`,
     // Write ANTEC logo in your signature purple color
     writeToTerminal('\x1b[38;2;155;124;255m' + asciiLogo + '\x1b[0m')
     writeToTerminal('')
-    writeToTerminal('Welcome to my terminal portfolio. (Version 1.3.1)')
-    writeToTerminal('-----')
+    writeToTerminal('Welcome to my terminal portfolio. (Version 2.0.0)')
+    writeToTerminal('----')
     writeToTerminal('')
     writeToTerminal("This project's source code can be found in this project's \x1b[38;2;6;182;212m\x1b]8;;https://github.com/antik1108/Terminal-Portfolio-ANTEC\x1b\\GitHub repo\x1b]8;;\x1b\\\x1b[0m.")
-    writeToTerminal('-----')
+    writeToTerminal('----')
     writeToTerminal('')
     writeToTerminal("For a list of available commands, type 'help'.")
     writeToTerminal('')
@@ -398,6 +495,10 @@ eg: themes set ubuntu`,
     // Automatically show welcome on startup
     showWelcome()
     setTerminalReady(true)
+    
+    // Initialize session persistence check
+    // The useEffect for session restoration will handle prompt updates
+    // after the terminal is ready and auth context has initialized
   }
 
   useEffect(() => {
@@ -422,6 +523,27 @@ eg: themes set ubuntu`,
     terminal.current.open(terminalRef.current)
     fitAddon.current.fit()
 
+  // Initialize auth handler and prompt manager using an auth getter that reads from authRef
+  // This avoids stale closures and ensures both helpers always read latest auth state
+  const getAuth = () => authRef.current
+  promptManager.current = createPromptManager(terminal.current, getAuth)
+  authHandler.current = createAuthCommandHandler(terminal.current, getAuth, showPrompt, promptManager.current)
+    
+    // Add terminal state listener
+    authHandler.current.addTerminalStateListener((state, data) => {
+      setTerminalState(state)
+      
+      // Handle specific state changes
+      if (state === TERMINAL_CONSTANTS.COMMAND_STATES.AUTHENTICATING) {
+        // Terminal is now in authentication mode
+      } else if (state === TERMINAL_CONSTANTS.COMMAND_STATES.IDLE) {
+        // Terminal is back to normal mode
+      }
+    })
+    
+  // Initialize prompt manager
+  promptManager.current.initialize()
+
     // Start portfolio display immediately
     startPortfolio()
 
@@ -429,18 +551,40 @@ eg: themes set ubuntu`,
     terminal.current.onData((data) => {
       if (!terminalReady) return
 
+      // Check if auth handler should handle this input first
+      if (authHandler.current && authHandler.current.handleInput(data)) {
+        return
+      }
+
       const code = data.charCodeAt(0)
       
       if (code === 13) { // Enter
         writeToTerminal('')
-        processCommand(currentLine.current)
-        currentLine.current = ''
+        
+        // If auth handler is processing, handle regular field completion
+        if (authHandler.current && authHandler.current.isAuthProcessing()) {
+          authHandler.current.handleRegularFieldComplete(currentLine.current)
+          currentLine.current = ''
+        } else {
+          processCommand(currentLine.current)
+          currentLine.current = ''
+        }
       } else if (code === 127) { // Backspace
         if (currentLine.current.length > 0) {
           currentLine.current = currentLine.current.slice(0, -1)
           terminal.current.write('\b \b')
         }
       } else if (code === 9) { // Tab - autocomplete
+        // Don't autocomplete during auth processing
+        if (authHandler.current && authHandler.current.isAuthProcessing()) {
+          // Provide feedback that autocomplete is disabled during auth
+          authHandler.current.displayStateMessage(
+            'Autocomplete disabled during authentication',
+            'warning'
+          )
+          return
+        }
+        
         const availableCommands = Object.keys(commands).filter(cmd => !cmd.includes(' '))
         const matches = availableCommands.filter(cmd => cmd.startsWith(currentLine.current.toLowerCase()))
         
@@ -448,12 +592,35 @@ eg: themes set ubuntu`,
           const completion = matches[0].slice(currentLine.current.length)
           currentLine.current += completion
           terminal.current.write(completion)
+        } else if (matches.length > 1) {
+          // Show available completions
+          writeToTerminal('')
+          writeToTerminal(matches.join('  '))
+          showPrompt()
+          terminal.current.write(currentLine.current)
         }
       } else if (code === 12) { // Ctrl+L - clear
+        // Allow clear even during auth processing
         terminal.current.clear()
         showPrompt()
         currentLine.current = ''
+      } else if (code === 3) { // Ctrl+C - cancel operation
+        if (authHandler.current && authHandler.current.isAuthProcessing()) {
+          // Cancel authentication operation
+          authHandler.current.cancelAuthCommand()
+          currentLine.current = ''
+        } else {
+          // Regular Ctrl+C behavior - clear current line
+          writeToTerminal('^C')
+          currentLine.current = ''
+          showPrompt()
+        }
       } else if (code === 27) { // Escape sequences (arrow keys)
+        // Don't handle arrow keys during auth processing
+        if (authHandler.current && authHandler.current.isAuthProcessing()) {
+          return
+        }
+        
         const seq = data.slice(1)
         if (seq === '[A') { // Up arrow
           if (historyIndex.current > 0) {
@@ -494,11 +661,69 @@ eg: themes set ubuntu`,
 
     return () => {
       window.removeEventListener('resize', handleResize)
+      
+      // Cleanup auth handler listeners
+      if (authHandler.current) {
+        authHandler.current.setTerminalIdle()
+      }
+      
       if (terminal.current) {
         terminal.current.dispose()
       }
     }
   }, [terminalReady, currentTheme])
+
+  // Effect to handle authentication state changes and session restoration
+  useEffect(() => {
+    // Update authRef so getters read latest context
+    authRef.current = authContext
+
+    if (promptManager.current) {
+      // Always update prompt when auth state changes, regardless of processing state
+      promptManager.current.handleAuthStateChange(
+        authContext.isAuthenticated ? 'login' : 'logout',
+        authContext.user
+      )
+    }
+
+    // Listen for global auth change events (e.g., cross-tab or immediate updates)
+    const onAuthChange = (e) => {
+      try {
+        authRef.current = authContext
+        if (promptManager.current) {
+          promptManager.current.handleAuthStateChange(e?.detail?.user ? 'login' : 'logout', e?.detail?.user)
+          promptManager.current.refreshPrompt()
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    window.addEventListener('antec:authChange', onAuthChange)
+
+    return () => {
+      window.removeEventListener('antec:authChange', onAuthChange)
+    }
+  }, [authContext.isAuthenticated, authContext.user])
+
+  // Effect to handle session persistence on page load
+  useEffect(() => {
+    const handleSessionRestore = async () => {
+      // Wait for terminal to be ready and auth context to initialize
+      if (terminalReady && promptManager.current && !authContext.loading) {
+        // Handle session restoration
+        const hasValidSession = authContext.isAuthenticated && authContext.user
+        promptManager.current.handleSessionRestore(hasValidSession, authContext.user)
+        
+        // Optionally log session restoration for debugging
+        if (hasValidSession) {
+          // Session restored successfully
+        }
+      }
+    }
+
+    handleSessionRestore()
+  }, [terminalReady, authContext.loading, authContext.isAuthenticated, authContext.user])
 
   return (
     <div className="terminal-portfolio">

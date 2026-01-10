@@ -1,0 +1,16 @@
+{
+  "name": "@antec/api-client",
+  "version": "1.0.0",
+  "description": "Typed API client for ANTEC Terminal Portfolio",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build needed for api-client package'",
+    "lint": "echo 'No linting configured yet'",
+    "type-check": "echo 'No type checking configured yet'"
+  },
+  "dependencies": {
+    "@antec/shared": "*"
+  },
+  "devDependencies": {}
+}
