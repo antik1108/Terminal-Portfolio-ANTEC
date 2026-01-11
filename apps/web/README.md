@@ -1,57 +1,199 @@
-# ANTEC Web (Frontend)
+# 🖥️ ANTEC Web (Frontend)
 
-This is the frontend for the ANTEC Terminal Portfolio — a React (Vite) app that provides a terminal-style UI for the portfolio. It integrates authentication with the backend API and presents an interactive terminal powered by `xterm.js`.
+The frontend for ANTEC Terminal Portfolio — a React application that renders a fully interactive terminal experience in the browser.
 
-This README is a concise guide to get the frontend running and to explain how it connects to the backend, written so someone with minimal experience can follow it.
+---
 
-## What this app does (simple)
-- Shows a terminal-like experience in the browser where you can type commands (help, whoami, projects, antec login, antec signup, etc.).
-- Provides interactive signup/login flows that call the backend API and store tokens locally for session persistence.
-- Uses `@antec/api-client` (a small package in `packages/`) to talk to the backend.
+## 📋 Overview
 
-## Prerequisites
-- Node.js (v18+ recommended)
-- npm
-- A running backend API (see `apps/backend/README.md`) — by default the frontend expects the API at `http://localhost:3001/api`.
+This frontend delivers:
+- **Terminal UI**: Authentic Linux-style terminal powered by xterm.js
+- **Boot sequence**: Animated startup with ASCII art and system messages
+- **Command system**: Built-in commands (`help`, `whoami`, `projects`, `theme`, etc.)
+- **Authentication**: Interactive `antec login` / `antec signup` flows
+- **Multiple themes**: Dark, light, green-goblin, ubuntu, espresso, and more
 
-## Quick start (local)
-1. Copy example env file (if present) and confirm the backend URL is correct in `packages/shared/src/index.js` (API_ENDPOINTS.BASE_URL is `http://localhost:3001/api` by default).
+Type commands. Get responses. Feel like you're SSHing into a server.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | React 19 |
+| Build Tool | Vite 7 |
+| Terminal | xterm.js + addons |
+| Styling | CSS (no framework) |
+| API Client | `@antec/api-client` (monorepo package) |
+
+---
+
+## 🚀 Running Locally
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Backend API running (see `apps/backend/README.md`)
+
+### Setup
 
 ```bash
-# from repo root
+# From repo root
 cd apps/web
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-2. Open your browser at the Vite dev server address (usually `http://localhost:5173`).
+Open http://localhost:5173 in your browser.
 
-## How authentication works (high-level)
-1. In the terminal UI you run `antec signup` or `antec login`.
-2. A small interactive form in the terminal collects credentials.
-3. The frontend calls the backend API (`/api/auth/signup` or `/api/auth/login`) using `@antec/api-client`.
-4. On success, the backend returns a JWT access token (and a refresh token). The frontend stores the token and user in `localStorage` and updates the UI to show the logged-in user.
-5. Protected operations use the stored token in the `Authorization: Bearer <token>` header.
+### With Backend
 
-If you logout (`antec logout`), the frontend will call the backend logout endpoint and clear local storage so the terminal returns to a guest prompt.
+```bash
+# From repo root — run both
+npm run dev:all
+```
 
-## Important files to know
-- `src/components/TerminalPortfolio.jsx` — Terminal UI, command handling, and integration with auth.
-- `src/contexts/AuthContext.jsx` — React context that holds auth state and exposes `login`, `signup`, `logout` functions for the app.
-- `src/utils/authCommands.js` — Terminal command handlers for signup/login/logout flows.
-- `packages/api-client/src/index.js` — HTTP client wrapper used by the frontend to call the backend and handle tokens.
-- `packages/shared/src/index.js` — Shared constants (API endpoints, messages, validation helpers).
+---
 
-## Common developer tasks
-- Change API endpoint: edit `API_ENDPOINTS.BASE_URL` in `packages/shared/src/index.js` or set a proxy in Vite if you prefer.
-- Reset local session: open DevTools → Application → Local Storage and remove `antec_auth_token` and `antec_user`, or use the `antec logout` command.
+## ⌨️ Available Commands
 
-## Troubleshooting
-- If `whoami` shows `guest` after login, try refreshing the page — the app reads the stored token on load and restores the session. The code includes logic to re-sync state immediately after login, but timing differences can occur during development.
-- If the terminal commands are unresponsive, open DevTools console to see errors. Missing dependencies or mismatched package versions can cause issues.
+Type `help` in the terminal to see all commands:
 
-## Next steps (optional enhancements)
-- Add E2E tests (Playwright / Cypress) to record and verify typical flows (signup/login/logout/whoami).
-- Use httpOnly secure cookies for refresh tokens in production to improve security.
+| Command | Description |
+|---------|-------------|
+| `help` | Show all available commands |
+| `whoami` | Display current user |
+| `about` | About the developer |
+| `projects` | List portfolio projects |
+| `skills` | Technical skills |
+| `contact` | Contact information |
+| `theme <name>` | Change terminal theme |
+| `clear` | Clear the terminal |
+| `antec login` | Log in to account |
+| `antec signup` | Create new account |
+| `antec logout` | Log out |
+| `antec status` | Show auth status |
 
-If you want, I can expand either README with curl examples, screenshots, or a short video walkthrough.
+---
+
+## 🎨 Themes
+
+Change themes with `theme <name>`:
+
+- `dark` (default)
+- `light`
+- `green-goblin`
+- `ubuntu`
+- `blue-matrix`
+- `espresso`
+
+---
+
+## 🔐 Authentication Flow
+
+1. User types `antec signup` or `antec login`
+2. Terminal prompts for credentials (interactive input)
+3. Frontend calls backend via `@antec/api-client`
+4. On success: JWT stored in localStorage, prompt updates to show username
+5. On logout: Token cleared, returns to guest prompt
+
+```
+guest@antec:~$ antec login
+Email or username: myuser
+Password: ********
+✓ Login successful!
+
+myuser@antec:~$ whoami
+myuser
+```
+
+---
+
+## 📁 Folder Structure
+
+```
+src/
+├── main.jsx              # App entry point
+├── App.jsx               # Root component
+├── App.css               # Global styles
+├── index.css             # Base styles
+├── components/
+│   ├── TerminalPortfolio.jsx  # Main terminal UI
+│   ├── BootSequence.jsx       # Startup animation
+│   ├── BootSequence.css       # Boot styles
+│   ├── ASCIILogo.jsx          # ASCII art logo
+│   ├── BootMessages.jsx       # System boot messages
+│   └── LoadingCursor.jsx      # Blinking cursor
+├── contexts/
+│   └── AuthContext.jsx        # React auth state
+└── utils/
+    ├── authCommands.js        # Auth command handlers
+    ├── passwordInput.js       # Secure password input
+    └── promptManager.js       # Dynamic prompt updates
+```
+
+---
+
+## 🔧 Configuration
+
+### API Endpoint
+
+The API URL is configured in `packages/shared/src/index.js`:
+
+```javascript
+export const API_ENDPOINTS = {
+  BASE_URL: 'http://localhost:3001/api',
+  // ...
+}
+```
+
+For production, this should point to your deployed backend.
+
+### Vite Config
+
+```javascript
+// vite.config.js
+export default {
+  server: {
+    port: 5173,
+    host: true
+  }
+}
+```
+
+---
+
+## 🔧 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `whoami` shows guest after login | Refresh page — session restores from localStorage |
+| API connection failed | Ensure backend is running on port 3001 |
+| CORS errors | Check `CORS_ORIGIN` in backend `.env` |
+| Terminal not rendering | Check browser console for xterm.js errors |
+
+---
+
+## 📦 Dependencies on Monorepo Packages
+
+This frontend uses shared packages:
+
+```
+packages/
+├── api-client/   # HTTP client for backend calls
+└── shared/       # Constants, types, validation
+```
+
+These are linked via npm workspaces — no manual linking needed.
+
+---
+
+## 📄 License
+
+MIT

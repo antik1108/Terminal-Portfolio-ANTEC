@@ -1,0 +1,37 @@
+# =============================================================================
+# ANTEC Backend Dockerfile - Development
+# Includes nodemon for hot-reload during development
+# =============================================================================
+
+FROM node:20-alpine
+
+# Install necessary build tools for native dependencies (bcrypt)
+RUN apk add --no-cache python3 make g++
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including dev dependencies for nodemon)
+RUN npm ci --legacy-peer-deps || npm install
+
+# Copy application source code
+COPY --chown=nodejs:nodejs src ./src
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=3001
+
+# Expose the application port
+EXPOSE 3001
+
+# Switch to non-root user
+USER nodejs
+
+# Start with nodemon for hot-reload
+CMD ["npx", "nodemon", "src/index.js"]
